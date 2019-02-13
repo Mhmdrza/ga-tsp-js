@@ -53,73 +53,9 @@ export default class TSP {
 
     shuffle(this.orders)
     this.orders.push(this.orders[0])
-
-    this.ga = new GA({
-      life_count: this.life_count,
-      mutation_rate: this.mutation_rate,
-      gene_length: this.n,
-      rate: this.rate.bind(this),
-      xFunc: this.xFunc.bind(this),
-      mFunc: this.mFunc.bind(this)
-    })
   }
 
-  rate (gene) {
-    return 1 / this.getDistance(gene)
-  }
-
-  xFunc (lf1, lf2) {
-    let p1 = Math.floor(Math.random() * (this.n - 2)) + 1
-    let p2 = Math.floor(Math.random() * (this.n - p1)) + p1
-    let piece = lf2.gene.slice(p1, p2)
-    let new_gene = lf1.gene.slice(0, p1)
-    piece.concat(lf2.gene).map(i => {
-      if (!new_gene.includes(i)) {
-        new_gene.push(i)
-      }
-    })
-
-    return new_gene
-  }
-
-  mFunc (gene) {
-    let p1 = 0
-    let p2 = 0
-    let n = gene.length
-    while (p1 === p2) {
-      p1 = Math.floor(Math.random() * n)
-      p2 = Math.floor(Math.random() * n)
-    }
-    if (p1 > p2) {
-      [p1, p2] = [p2, p1]
-    }
-
-    let funcs = [
-      (g, p1, p2) => {
-        // 交换
-        let t = g[p1]
-        g[p1] = g[p2]
-        g[p2] = t
-      }, (g, p1, p2) => {
-        // 倒序
-        let t = g.slice(p1, p2).reverse()
-        g.splice(p1, p2 - p1, ...t)
-      }, (g, p1, p2) => {
-        // 移动
-        let t = g.splice(p1, p2 - p1)
-        g.splice(Math.floor(Math.random() * g.length), 0, ...t)
-      }
-    ]
-
-    let r = Math.floor(Math.random() * funcs.length)
-    funcs[r](gene, p1, p2)
-
-    return gene
-  }
-
-  /**
-   * 得到当前顺序下连线的总长度
-   */
+  
   getDistance (order = null) {
     let d = 0
     let {nodes} = this
@@ -133,7 +69,7 @@ export default class TSP {
 
   render () {
     let {ctx, r, nodes, dr} = this
-    ctx.clearRect(0, 0, this.width * dr, this.height * dr)
+    // ctx.clearRect(0, 0, this.width * dr, this.height * dr)
 
     ctx.lineWidth = this.lw * dr
     ctx.strokeStyle = 'rgba(64, 64, 64, 0.2)'
@@ -166,44 +102,5 @@ export default class TSP {
     //$('#mutation').html(this.ga.mutation_count)
   }
 
-  async run () {
-    let last_best_score = -1
-    let last_best_gen = 0
 
-    while (this.is_running) {
-      this.orders = this.ga.next()
-
-      let {best, generation} = this.ga
-
-      if (last_best_score !== best.score) {
-        last_best_score = best.score
-        last_best_gen = generation
-      } else if (generation - last_best_gen >= 5000) {
-        // 超过 n 代没有更好的结果，自动结束
-        this.stop()
-        break
-      }
-
-      if (this.ga.generation % 10 === 0) {
-        this.render()
-      }
-      await wait(1)
-    }
-  }
-
-  start () {
-    this.is_running = true
-    this.run()
-    if (typeof this._onstart === 'function') {
-      this._onstart()
-    }
-  }
-
-  stop () {
-    this.is_running = false
-
-    if (typeof this._onstop === 'function') {
-      this._onstop()
-    }
-  }
 }
